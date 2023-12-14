@@ -1,26 +1,52 @@
 import { Injectable } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from '../user/entities/user.entity';
+import { Repository } from 'typeorm';
+import { GenericResult } from '../common/interfaces';
+import { CreateUserDto } from '../user/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
+  async register(
+    createAuthDto: CreateAuthDto,
+  ): Promise<GenericResult<User | any>> {
+    try {
+      const userExist = await this.userRepository.findBy({
+        email: createAuthDto.email,
+      });
+
+      if (userExist.length > 0) {
+        return {
+          data: {},
+          error: true,
+          message: `El usuario con el email: ${createAuthDto.email}, ya se encuentra registrado en nuestro sistema`,
+        };
+      }
+
+      const user = this.userRepository.create(createAuthDto);
+      const data = await this.userRepository.save(user);
+
+      return {
+        data,
+        error: null,
+        message: 'Se registro el usuario con exito, bienvenido!.',
+      };
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  findAll() {
+  login() {
     return `This action returns all auth`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  loginWithGoogle() {
+    return 'this actions evaluates the googleId, the email and if not registered register automatic';
   }
 }
