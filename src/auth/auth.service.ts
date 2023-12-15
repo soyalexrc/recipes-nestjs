@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { Repository } from 'typeorm';
@@ -13,23 +13,21 @@ export class AuthService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}
-  async register(
-    createAuthDto: CreateAuthDto,
-  ): Promise<GenericResult<User | any>> {
+  async register(registerDto: RegisterDto): Promise<GenericResult<User | any>> {
     try {
       const userExist = await this.userRepository.findBy({
-        email: createAuthDto.email,
+        email: registerDto.email,
       });
 
       if (userExist.length > 0) {
         return {
           data: {},
           error: true,
-          message: `El usuario con el email: ${createAuthDto.email}, ya se encuentra registrado en nuestro sistema`,
+          message: `El usuario con el email: ${registerDto.email}, ya se encuentra registrado en nuestro sistema`,
         };
       }
 
-      const user = this.userRepository.create(createAuthDto);
+      const user = this.userRepository.create(registerDto);
       const data = await this.userRepository.save(user);
 
       return {
@@ -42,11 +40,39 @@ export class AuthService {
     }
   }
 
-  login() {
+  loginWithGoogle() {
     return `This action returns all auth`;
   }
 
-  loginWithGoogle() {
-    return 'this actions evaluates the googleId, the email and if not registered register automatic';
+  async login(loginDto: LoginDto): Promise<GenericResult<User | any>> {
+    try {
+      const userExists = await this.userRepository.findBy({
+        email: loginDto.email,
+      });
+
+      if (!userExists) {
+        return {
+          data: {},
+          error: true,
+          message: `No se encontro un usuario con el email: ${loginDto.email}`,
+        };
+      }
+
+      if (userExists[0].password !== loginDto.password) {
+        return {
+          data: {},
+          error: true,
+          message: `Las contrasenas no coinciden`,
+        };
+      }
+
+      return {
+        data: userExists[0],
+        error: null,
+        message: `Bienvenido, ${userExists[0].name}`,
+      };
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

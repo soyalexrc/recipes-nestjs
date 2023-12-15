@@ -1,8 +1,11 @@
 import { IsEmail, IsOptional, IsString } from 'class-validator';
 
-export class CreateAuthDto {
+export class RegisterDto {
   @IsString()
   name: string;
+
+  @IsString()
+  password: string;
 
   @IsString()
   @IsEmail()
